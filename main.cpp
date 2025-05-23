@@ -5,36 +5,35 @@
 
 using namespace std;
 
+
 //classe cores
 typedef struct coress{
 int cor1,cor2,cor3; 
 }cores;
 
+
 //Tamanho do Arquivo
-float width = 4000;
-float height = 4000; 
+float width = 2000;     //Valor padrão 1000
+float height = 4000;    // Valor padrão 1000
 
 //Protótipos
 int value_mandelbrot_out(int i, int j, int foco, float amplia);
 void mandenbrolt_out_creation(int foco, float amplia);
 //protótipos 
 
-
 //Chamada Main
+
 int main () 
-{ cores val;
- // val = value_mandelbrot_out(1000, 1000, 50, 1); 
- //cout<< "cout"<< val.cor1 << endl;
- mandenbrolt_out_creation(3300, 32768);
+{ 
+ mandenbrolt_out_creation(70, 0.5);    // Valor padrão (50,2)
  return 0;
 }
-
 
 int value_mandelbrot_out(int x, int y, int foco, float amplia)
 {
     cores corval;
     corval.cor1=corval.cor2=corval.cor3=0;
-    complex<double> cpoint((double)x/(amplia*width)-0.68653, (double)y/(amplia*height)-0.30615);
+    complex<double> cpoint((double)x/(amplia*width)-2, (double)y/(amplia*height)-1);
     complex<double> z(0, 0);
     int nb_iter = 0;
     while (abs (z) < 2 && nb_iter <= foco) 
@@ -70,8 +69,7 @@ int value_mandelbrot_out(int x, int y, int foco, float amplia)
 
 void mandenbrolt_out_creation(int foco, float amplia)
   {
-    ofstream my_Image ("mandelbrot2.ppm"); 
-    //cores val;
+    ofstream my_Image ("mandelbrot4.ppm"); 
     if (my_Image.is_open ()) {
         my_Image << "P3\n" << width << " " << height << " 255\n";
         for (int i = 0; i < width; i++) {
