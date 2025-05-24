@@ -1,97 +1,85 @@
 #include <iostream>
 #include <fstream>
 #include <complex>
-#include<math.h>
+#include <cmath>
+#include <vector>
+#include <cstdlib>
+#include <sstream>
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
 
 using namespace std;
 
-
-//classe cores
-typedef struct coress{
-int cor1,cor2,cor3; 
-}cores;
-
-
-//Tamanho do Arquivo
-float width = 2000;     //Valor padrão 1000
-float height = 4000;    // Valor padrão 1000
-
-//Protótipos
-int value_mandelbrot_out(int i, int j, int foco, float amplia);
-void mandenbrolt_out_creation(int foco, float amplia);
-//protótipos 
-
-//Chamada Main
-
-int main () 
-{ 
- mandenbrolt_out_creation(70, 0.5);    // Valor padrão (50,2)
- return 0;
-}
-
-int value_mandelbrot_out(int x, int y, int foco, float amplia)
-{
-    cores corval;
-    corval.cor1=corval.cor2=corval.cor3=0;
-    complex<double> cpoint((double)x/(amplia*width)-2, (double)y/(amplia*height)-1);
+// Função que calcula a cor do ponto (x,y)
+int calculate_mandelbrot(int x, int y, int width, int height, int max_iter, float zoom, double x_offset, double y_offset) {
+    complex<double> c((double)x / (zoom * width) + x_offset, (double)y / (zoom * height) + y_offset);
     complex<double> z(0, 0);
-    int nb_iter = 0;
-    while (abs (z) < 2 && nb_iter <= foco) 
-    {
-        z = z * z + cpoint;
-        nb_iter++;
+    int iter = 0;
+
+    while (abs(z) < 2 && iter < max_iter) {
+        z = z * z + c;
+        iter++;
     }
-    if (nb_iter < foco) return 3*(255*nb_iter)/foco;
-    /* {
-      if(nb_iter<=foco/3)
-      {
-        corval.cor1=3*nb_iter;
-        corval.cor2=0;
-        corval.cor3=0;
-      }
-      else if((nb_iter>foco/3)&&(nb_iter<=2*foco/3))
-      {
-        corval.cor1=255;
-        corval.cor2=round(((3-foco/nb_iter)*nb_iter/foco)*255);
-        corval.cor3=0;
-      }
-      else if(nb_iter>2*foco/3)
-      {
-        corval.cor1=255;
-        corval.cor2=255;
-        corval.cor3=round(((3-2*foco/nb_iter)*nb_iter/foco)*255);
-      }
-      return corval;
-      }*/
-    else 
-       return 0;
+
+    if (iter < max_iter) {
+        return 3 * (255 * iter) / max_iter;
+    } else {
+        return 0;
+    }
 }
 
-void mandenbrolt_out_creation(int foco, float amplia)
-  {
-    ofstream my_Image ("mandelbrot4.ppm"); 
-    if (my_Image.is_open ()) {
-        my_Image << "P3\n" << width << " " << height << " 255\n";
+int main() {
+    int width, height, max_iter;
+    float zoom;
+    double x_offset, y_offset;
+
+    // Solicita ao usuário os parâmetros
+    cout << "Digite a largura (width) da imagem: ";
+    cin >> width;
+    cout << "Digite a altura (height) da imagem: ";
+    cin >> height;
+    cout << "Digite o numero maximo de iteracoes (foco): ";
+    cin >> max_iter;
+    cout << "Digite o fator de zoom (amplia): ";
+    cin >> zoom;
+    cout << "Digite o deslocamento X (ex: -2.0): ";
+    cin >> x_offset;
+    cout << "Digite o deslocamento Y (ex: -1.0): ";
+    cin >> y_offset;
+
+    // Cria nome da pasta com os parâmetros
+    stringstream folder_name;
+    folder_name << "mandelbrot_w" << width << "_h" << height
+                << "_iter" << max_iter << "_zoom" << zoom
+                << "_x" << x_offset << "_y" << y_offset;
+
+    string mkdir_cmd = "mkdir \"" + folder_name.str() + "\"";
+    system(mkdir_cmd.c_str()); // cria pasta
+
+    // Prepara a imagem em memória
+    vector<unsigned char> image(width * height * 3); // RGB
+    for (int j = 0; j < height; j++) {
         for (int i = 0; i < width; i++) {
-             for (int j = 0; j < height; j++)  {    
-               int val = value_mandelbrot_out(i, j, foco, amplia); 
-               if(val<=255)
-               {
-               my_Image << val << ' ' << 0 << ' ' << 0 << endl;
-               }
-               else if(val>255&&val<=610)
-               {
-               my_Image << 255 << ' ' << val-255 << ' ' << 0 << endl;
-               }
-               else
-               {
-                 my_Image << 255 << ' ' << 255 << ' ' << val-610 << endl;
-               }
-               
-             }
+            int val = calculate_mandelbrot(i, j, width, height, max_iter, zoom, x_offset, y_offset);
+            int index = (j * width + i) * 3;
+
+            if (val <= 255) {
+                image[index] = val; image[index + 1] = 0; image[index + 2] = 0; // vermelho
+            } else if (val <= 610) {
+                image[index] = 255; image[index + 1] = val - 255; image[index + 2] = 0; // amarelo
+            } else {
+                image[index] = 255; image[index + 1] = 255; image[index + 2] = val - 610; // branco
+            }
         }
-        my_Image.close();
     }
-    else cout << "Could not open the file";
-    return;
+
+    // Salva como PNG
+    string png_path = folder_name.str() + "/mandelbrot.png";
+    if (stbi_write_png(png_path.c_str(), width, height, 3, image.data(), width * 3)) {
+        cout << "Imagem gerada com sucesso: " << png_path << endl;
+    } else {
+        cerr << "Erro ao salvar a imagem PNG." << endl;
+    }
+
+    return 0;
 }
